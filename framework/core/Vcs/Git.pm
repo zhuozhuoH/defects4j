@@ -52,7 +52,12 @@ sub _checkout_cmd {
 sub _apply_cmd {
     @_ == 3 or confess($ARG_ERROR);
     my ($self, $work_dir, $patch_file) = @_;
-    return "cd $work_dir && git apply $patch_file 2>&1";
+    # Try a strict apply first (unchanged behaviour for projects whose patches
+    # already match). Only on failure fall back to --ignore-whitespace, which
+    # tolerates CRLF/LF and trailing-whitespace mismatches (needed for Mockito
+    # patches under newer git, e.g. git >= 2.x). Logic-level diffs still must
+    # match exactly, so well-behaved projects are unaffected.
+    return "cd $work_dir && (git apply $patch_file 2>&1 || git apply --ignore-whitespace $patch_file 2>&1)";
 }
 
 sub _diff_cmd {
